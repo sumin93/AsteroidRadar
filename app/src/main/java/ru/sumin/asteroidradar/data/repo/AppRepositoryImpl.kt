@@ -1,12 +1,13 @@
 package ru.sumin.asteroidradar.data.repo
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ru.sumin.asteroidradar.data.api.ApiFactory
 import ru.sumin.asteroidradar.data.api.parseAsteroidsJsonResult
 import ru.sumin.asteroidradar.data.dto.PictureOfDayDto
@@ -14,8 +15,6 @@ import ru.sumin.asteroidradar.domain.AppRepository
 import ru.sumin.asteroidradar.domain.AsteroidEntity
 import ru.sumin.asteroidradar.domain.Period
 import ru.sumin.asteroidradar.domain.PictureOfDayEntity
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class AppRepositoryImpl(context: Context) : AppRepository {
 
@@ -32,10 +31,10 @@ class AppRepositoryImpl(context: Context) : AppRepository {
 
     override fun getAsteroids(period: Period): LiveData<List<AsteroidEntity>> {
         val result = when (period) {
-                Period.ALL -> db.asteroidDao().getAllAsteroids()
-                Period.WEEK -> db.asteroidDao().getWeekAsteroids()
-                Period.TODAY -> db.asteroidDao().getTodayAsteroids()
-            }
+            Period.ALL -> db.asteroidDao().getAllAsteroids()
+            Period.WEEK -> db.asteroidDao().getWeekAsteroids()
+            Period.TODAY -> db.asteroidDao().getTodayAsteroids()
+        }
         return Transformations.map(result) {
             it.map { it.toDomainEntity() }
         }
@@ -44,13 +43,9 @@ class AppRepositoryImpl(context: Context) : AppRepository {
     override fun getPictureOfDay() = _pictureOfDay
 
     override suspend fun refreshData() {
-        try {
-            loadPictureOfDayFromCache()
-            loadAsteroidsFromNetwork()
-            loadPictureOfDayFromNetwork()
-        } catch (e: Exception) {
-            Log.d(LOG_TAG, "Error while refreshing data", e)
-        }
+        loadPictureOfDayFromCache()
+        loadPictureOfDayFromNetwork()
+        loadAsteroidsFromNetwork()
     }
 
     override suspend fun clearOutdatedData() {
@@ -85,8 +80,6 @@ class AppRepositoryImpl(context: Context) : AppRepository {
     }
 
     private companion object {
-
-        const val LOG_TAG = "AppRepositoryImpl"
 
         const val PREFS_NAME = "app.prefs"
         const val PICTURE_OF_DAY_KEY = "picture_of_day"

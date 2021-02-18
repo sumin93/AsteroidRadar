@@ -2,6 +2,7 @@ package ru.sumin.asteroidradar.presentation.main
 
 import android.os.Bundle
 import android.view.*
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -19,6 +20,7 @@ class MainFragment : Fragment() {
     }
 
     private lateinit var binding: FragmentMainBinding
+    private lateinit var alertDialog: AlertDialog
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -39,6 +41,17 @@ class MainFragment : Fragment() {
 
         binding.viewModel = viewModel
 
+        alertDialog = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.error_title)
+            .setMessage(R.string.error_message)
+            .setPositiveButton(R.string.error_retry_button) { _, _ ->
+                viewModel.getAsteroids()
+            }
+            .setOnDismissListener {
+                viewModel.errorProcessed()
+            }
+            .create()
+
         val adapter = AsteroidAdapter {
             findNavController().navigate(MainFragmentDirections.actionShowDetail(it))
         }
@@ -52,6 +65,14 @@ class MainFragment : Fragment() {
         viewModel.pictureOfDay.observe(viewLifecycleOwner, Observer {
             binding.pictureOfDay = it
         })
+
+        viewModel.error.observe(viewLifecycleOwner, Observer {
+            if (it != null) {
+                alertDialog.show()
+            }
+        })
+
+        viewModel.getAsteroids()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
